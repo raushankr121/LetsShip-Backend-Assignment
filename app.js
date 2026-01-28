@@ -26,6 +26,19 @@ app.get('/orders/:id', async (req, res) => {
     }
 });
 
+// --- GET All Orders API ---
+app.get('/orders', async (req, res) => {
+    const connection = await db.getConnection();
+    try {
+        const [orders] = await connection.query('SELECT * FROM orders ORDER BY id DESC');
+        res.json(orders);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    } finally {
+        connection.release();
+    }
+});
+
 
 app.post('/orders', async (req, res) => {
     const { pickup_x, pickup_y, drop_x, drop_y, type, package_details } = req.body;
