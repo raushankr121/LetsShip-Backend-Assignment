@@ -7,6 +7,26 @@ app.use(express.json());
 const MAX_DELIVERY_RANGE = 20;   // maximum delivery range for express 
 
 
+app.get('/orders/:id', async (req, res) => {
+    const orderId = req.params.id;
+    const connection = await db.getConnection();
+    
+    try {
+        const [orders] = await connection.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+        
+        if (orders.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        res.json(orders[0]);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    } finally {
+        connection.release();
+    }
+});
+
+
 app.post('/orders', async (req, res) => {
     const { pickup_x, pickup_y, drop_x, drop_y, type, package_details } = req.body;
 
@@ -103,9 +123,9 @@ app.patch('/orders/:id/status', async (req, res) => {
 
     // Strict State Machine: We can only move one step forward at a time!
     const validTransitions = {
-        'ASSIGNED': 'PICKED_UP',
-        'PICKED_UP': 'IN_TRANSIT',
-        'IN_TRANSIT': 'DELIVERED'
+        'ASSIGNED': ['PICKED_UP','CANCELLED'],
+        'PICKED_UP': ['IN_TRANSIT','CANCELLED'],
+        'IN_TRANSIT': ['DELIVERED','CANCELLED']
     };
 
     const connection = await db.getConnection();
@@ -116,14 +136,22 @@ app.patch('/orders/:id/status', async (req, res) => {
         const order = orders[0];
 
         // Validate the move
-        if (validTransitions[order.status] !== newStatus) {
+        const allowedMoves = validTransitions[order.status];
+        if (!allowedMoves || !allowedMoves.includes(newStatus)) {
             return res.status(400).json({
-                error: `Invalid move. You are at ${order.status}. Next step must be ${validTransitions[order.status]}`
+                error: `Invalid move. You are at ${order.status}. Allowed moves: ${allowedMoves}`
             });
         }
 
+
         // Update Status
         await connection.query('UPDATE orders SET status = ? WHERE id = ?', [newStatus, orderId]);
+
+
+        // If CANCELLED, free the courier immediately
+        if (newStatus === 'CANCELLED' && order.courier_id) {
+            await connection.query('UPDATE couriers SET is_available = TRUE WHERE id = ?', [order.courier_id]);
+        }
 
         // If DELIVERED, free the courier!
         if (newStatus === 'DELIVERED') {
@@ -131,6 +159,7 @@ app.patch('/orders/:id/status', async (req, res) => {
         }
         res.json({ success: true, oldStatus: order.status, newStatus: newStatus });
 
+        
     } catch (e) {
         res.status(500).json({ error: e.message });
     } finally {
