@@ -29,7 +29,7 @@ JSON
   "package_details": "Laptop"
 }
 Description: Creates a new order. Automatically assigns the nearest available courier. Downgrades EXPRESS to NORMAL if the distance exceeds 20km.
---------------------------------------------------------------------------
+
 Expected Type Output
 {
     "success": true,
