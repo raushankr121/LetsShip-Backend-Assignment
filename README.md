@@ -80,6 +80,7 @@ Description: Returns a list of all orders, sorted by newest first.
 Method: GET
 
 URL: http://localhost:3000/orders/:id
+<br>
 e.g. http://localhost:3000/orders/52
 
 Description: Returns detailed information for a specific order ID.
