@@ -20,6 +20,7 @@ Headers: Content-Type: application/json
 Body (JSON):
 
 JSON
+<br>
 {
   "pickup_x": 0,
   "pickup_y": 0,
@@ -28,6 +29,7 @@ JSON
   "type": "normal",
   "package_details": "Laptop"
 }
+<br>
 Description: Creates a new order. Automatically assigns the nearest available courier. Downgrades EXPRESS to NORMAL if the distance exceeds 20km.
 
 Expected Type Output
@@ -52,9 +54,11 @@ Headers: Content-Type: application/json
 Body (JSON):
 
 JSON
+<br>
 {
   "newStatus": "PICKED_UP"
 }
+<br>
 Valid Transitions: PICKED_UP → IN_TRANSIT → DELIVERED (or CANCELLED at any stage).
 
 Behavior:
@@ -67,7 +71,7 @@ DELIVERED: Frees the courier and updates their location to the drop coordinates.
 Method: GET
 
 URL: http://localhost:3000/orders
-
+<br>
 e.g. http://localhost:3000/orders/
 
 Description: Returns a list of all orders, sorted by newest first.
